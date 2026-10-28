@@ -57,7 +57,7 @@ async function handleAnalyzeUrl({ url, mode, backendUrl }) {
         targetUrl
       };
     } catch (err) {
-      throw new Error(`Cannot connect to local backend at ${base}. Please make sure uvicorn is running, or switch to Standalone Mode.`);
+      throw new Error(`Cannot connect to local backend at ${base}. Please ensure uvicorn is running, or switch to Standalone Mode.`);
     }
   }
 
@@ -97,7 +97,6 @@ async function resolveDns(domain) {
   let records = [];
 
   try {
-    // Attempt 1: Google Public DNS DoH
     const googleRes = await fetch(
       `https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=A`,
       { cache: "no-store" }
@@ -111,7 +110,6 @@ async function resolveDns(domain) {
       }
     }
   } catch (err) {
-    // Attempt 2: Cloudflare DoH fallback
     try {
       provider = "Cloudflare DoH";
       const cfRes = await fetch(
@@ -155,7 +153,6 @@ async function measureHttpRequest(url) {
     const contentType = response.headers.get("content-type") || "unknown";
     const server = response.headers.get("server") || "unknown";
 
-    // Read payload to compute exact transfer size
     let sizeBytes = 0;
     const headerLen = response.headers.get("content-length");
     if (headerLen && !isNaN(parseInt(headerLen))) {
@@ -203,7 +200,6 @@ async function handleInspectActiveTab({ tabId, tabUrl }) {
   const parsed = new URL(tabUrl);
   const domain = parsed.hostname;
 
-  // Execute script in active tab to get performance navigation timings
   let pageNav = null;
   try {
     const injectionResults = await chrome.scripting.executeScript({
@@ -236,7 +232,6 @@ async function handleInspectActiveTab({ tabId, tabUrl }) {
     console.warn("Could not execute script on tab:", e);
   }
 
-  // Also query DNS for the domain to get the IP address
   const dnsResult = await resolveDns(domain);
 
   if (pageNav) {
@@ -269,7 +264,6 @@ async function handleInspectActiveTab({ tabId, tabUrl }) {
     };
   }
 
-  // Fallback if scripting was restricted
   const httpResult = await measureHttpRequest(tabUrl);
   return {
     domain,

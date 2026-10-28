@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Internet Request Visualizer",
   "version": "1.0.0",
-  "description": "Visualize DNS resolution, HTTP response latency, status codes, and request flow for any website.",
+  "description": "Visualize DNS resolution, HTTP response latency, status codes, and network flow for any website.",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",

@@ -20,7 +20,7 @@
         </div>
         <div class="brand-text">
           <h1>Request Visualizer</h1>
-          <p class="subtitle">Inspect Network Flow & Latency</p>
+          <p class="subtitle">Network Flow & Latency Benchmark</p>
         </div>
       </div>
       <button id="btnSettings" class="icon-btn" title="Toggle Backend Settings">
@@ -30,6 +30,26 @@
         </svg>
       </button>
     </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button id="tabBtnSingle" class="tab-btn active" data-tab="singleView">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 14 14"></polyline>
+        </svg>
+        Single Flow
+      </button>
+      <button id="tabBtnCompare" class="tab-btn" data-tab="compareView">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Compare Sites
+        <span class="compare-badge" id="compareBadgeCount">3</span>
+      </button>
+    </nav>
 
     <!-- Settings Drawer (Hidden by default) -->
     <div id="settingsDrawer" class="settings-drawer hidden">
@@ -58,237 +78,393 @@
       </div>
     </div>
 
-    <!-- Active Tab Quick Action Banner -->
-    <div id="activeTabBanner" class="active-tab-banner">
-      <div class="tab-info">
-        <span class="tab-badge">Active Tab</span>
-        <span id="activeTabHost" class="tab-host">loading...</span>
-      </div>
-      <button id="btnInspectTab" class="btn-inspect-tab">
-        Inspect Page
-      </button>
-    </div>
-
-    <!-- URL Input Section -->
-    <div class="input-section">
-      <div class="input-wrapper">
-        <input
-          type="text"
-          id="urlInput"
-          placeholder="Enter website (e.g. github.com)"
-          value="github.com"
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <button id="btnAnalyze" class="btn-analyze">
-          Analyze
+    <!-- VIEW 1: SINGLE SITE INSPECTOR -->
+    <main id="singleView" class="view-panel active">
+      <!-- Active Tab Quick Action Banner -->
+      <div id="activeTabBanner" class="active-tab-banner">
+        <div class="tab-info">
+          <span class="tab-badge">Active Tab</span>
+          <span id="activeTabHost" class="tab-host">loading...</span>
+        </div>
+        <button id="btnInspectTab" class="btn-inspect-tab">
+          Inspect Page
         </button>
       </div>
-      <!-- Quick preset chips -->
-      <div class="chips-row">
-        <span class="chip-label">Quick test:</span>
-        <button class="chip" data-url="github.com">github.com</button>
-        <button class="chip" data-url="google.com">google.com</button>
-        <button class="chip" data-url="wikipedia.org">wikipedia.org</button>
-        <button class="chip" data-url="cloudflare.com">cloudflare.com</button>
-      </div>
-    </div>
 
-    <!-- Error Message -->
-    <div id="errorBox" class="error-box hidden">
-      <div class="error-icon">⚠️</div>
-      <div id="errorMessage" class="error-text"></div>
-    </div>
-
-    <!-- Loading Spinner & State -->
-    <div id="loadingBox" class="loading-box hidden">
-      <div class="spinner"></div>
-      <div class="loading-label">Resolving DNS & sending request...</div>
-    </div>
-
-    <!-- Flow Visualization (Shown when data is ready) -->
-    <div id="flowContainer" class="flow-container hidden">
-
-      <!-- Summary Metric Bar -->
-      <div class="summary-bar">
-        <div class="metric">
-          <span class="metric-title">Total Latency</span>
-          <span id="metricTotalTime" class="metric-val highlight">--</span>
+      <!-- URL Input Section -->
+      <div class="input-section">
+        <div class="input-wrapper">
+          <input
+            type="text"
+            id="urlInput"
+            placeholder="Enter website (e.g. github.com)"
+            value="github.com"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="btnAnalyze" class="btn-primary">
+            Analyze
+          </button>
         </div>
-        <div class="metric">
-          <span class="metric-title">HTTP Status</span>
-          <span id="metricStatus" class="metric-val status-badge">--</span>
-        </div>
-        <div class="metric">
-          <span class="metric-title">Payload</span>
-          <span id="metricSize" class="metric-val">--</span>
+        <!-- Quick preset chips -->
+        <div class="chips-row">
+          <span class="chip-label">Quick test:</span>
+          <button class="chip" data-url="github.com">github.com</button>
+          <button class="chip" data-url="google.com">google.com</button>
+          <button class="chip" data-url="wikipedia.org">wikipedia.org</button>
+          <button class="chip" data-url="cloudflare.com">cloudflare.com</button>
         </div>
       </div>
 
-      <!-- Waterfall Timeline -->
-      <div class="waterfall-card">
-        <div class="waterfall-header">
-          <span>Latency Distribution</span>
-          <span id="waterfallTotalLabel"></span>
+      <!-- Error Message -->
+      <div id="errorBox" class="error-box hidden">
+        <div class="error-icon">⚠️</div>
+        <div id="errorMessage" class="error-text"></div>
+      </div>
+
+      <!-- Loading Spinner & State -->
+      <div id="loadingBox" class="loading-box hidden">
+        <div class="spinner"></div>
+        <div class="loading-label">Resolving DNS & sending request...</div>
+      </div>
+
+      <!-- Flow Visualization -->
+      <div id="flowContainer" class="flow-container hidden">
+        <!-- Summary Metric Bar -->
+        <div class="summary-bar">
+          <div class="metric">
+            <span class="metric-title">Total Latency</span>
+            <span id="metricTotalTime" class="metric-val highlight">--</span>
+          </div>
+          <div class="metric">
+            <span class="metric-title">HTTP Status</span>
+            <span id="metricStatus" class="metric-val status-badge">--</span>
+          </div>
+          <div class="metric">
+            <span class="metric-title">Payload</span>
+            <span id="metricSize" class="metric-val">--</span>
+          </div>
         </div>
-        <div class="waterfall-bar">
-          <div id="wfDns" class="wf-segment wf-dns" title="DNS Lookup"></div>
-          <div id="wfHandshake" class="wf-segment wf-handshake" title="TCP/TLS Handshake"></div>
-          <div id="wfResponse" class="wf-segment wf-response" title="HTTP Response / TTFB"></div>
+
+        <!-- Waterfall Timeline -->
+        <div class="waterfall-card">
+          <div class="waterfall-header">
+            <span>Latency Distribution</span>
+            <span id="waterfallTotalLabel"></span>
+          </div>
+          <div class="waterfall-bar">
+            <div id="wfDns" class="wf-segment wf-dns" title="DNS Lookup"></div>
+            <div id="wfHandshake" class="wf-segment wf-handshake" title="TCP/TLS Handshake"></div>
+            <div id="wfResponse" class="wf-segment wf-response" title="HTTP Response / TTFB"></div>
+          </div>
+          <div class="waterfall-legend">
+            <span class="legend-item"><span class="dot dot-dns"></span>DNS (<span id="wfDnsVal">--</span>)</span>
+            <span class="legend-item"><span class="dot dot-handshake"></span>Connect (<span id="wfHandshakeVal">--</span>)</span>
+            <span class="legend-item"><span class="dot dot-response"></span>Response (<span id="wfResponseVal">--</span>)</span>
+          </div>
         </div>
-        <div class="waterfall-legend">
-          <span class="legend-item"><span class="dot dot-dns"></span>DNS (<span id="wfDnsVal">--</span>)</span>
-          <span class="legend-item"><span class="dot dot-handshake"></span>Connect (<span id="wfHandshakeVal">--</span>)</span>
-          <span class="legend-item"><span class="dot dot-response"></span>Response (<span id="wfResponseVal">--</span>)</span>
+
+        <!-- Flowchart Pipeline -->
+        <div class="flow-pipeline">
+          <!-- Step 1: Client Request -->
+          <div class="step-card step-client">
+            <div class="step-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Client Request</h3>
+                <span class="badge badge-purple" id="clientProtocol">HTTPS</span>
+              </div>
+              <p class="step-detail">Initiated from Chrome browser</p>
+              <p class="step-sub" id="clientTargetUrl">https://github.com</p>
+            </div>
+          </div>
+
+          <div class="flow-arrow">
+            <div class="arrow-line"></div>
+            <div class="arrow-head">↓</div>
+          </div>
+
+          <!-- Step 2: DNS Resolution -->
+          <div class="step-card step-dns">
+            <div class="step-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>DNS Lookup</h3>
+                <span id="dnsTimeBadge" class="timing-badge">-- ms</span>
+              </div>
+              <div class="key-value-list">
+                <div class="kv-row">
+                  <span class="kv-key">Domain:</span>
+                  <span id="stepDomain" class="kv-val">--</span>
+                </div>
+                <div class="kv-row">
+                  <span class="kv-key">Resolved IP:</span>
+                  <span id="stepIp" class="kv-val ip-val">--</span>
+                </div>
+                <div class="kv-row">
+                  <span class="kv-key">Provider:</span>
+                  <span id="stepDnsProvider" class="kv-val text-muted">Google DoH</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-arrow">
+            <div class="arrow-line"></div>
+            <div class="arrow-head">↓</div>
+          </div>
+
+          <!-- Step 3: HTTP Request & Response -->
+          <div class="step-card step-http">
+            <div class="step-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+            </div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>HTTP Request</h3>
+                <span id="httpTimeBadge" class="timing-badge">-- ms</span>
+              </div>
+              <div class="key-value-list">
+                <div class="kv-row">
+                  <span class="kv-key">Method:</span>
+                  <span class="kv-val font-mono">GET /</span>
+                </div>
+                <div class="kv-row">
+                  <span class="kv-key">Status:</span>
+                  <span id="stepStatusCode" class="kv-val status-pill">--</span>
+                </div>
+                <div class="kv-row" id="rowServer">
+                  <span class="kv-key">Server:</span>
+                  <span id="stepServer" class="kv-val text-muted">--</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-arrow">
+            <div class="arrow-line"></div>
+            <div class="arrow-head">↓</div>
+          </div>
+
+          <!-- Step 4: Request Complete -->
+          <div class="step-card step-complete">
+            <div class="step-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Request Complete</h3>
+                <span class="badge badge-success">Success</span>
+              </div>
+              <p class="step-detail">Server responded successfully</p>
+              <div class="key-value-list">
+                <div class="kv-row">
+                  <span class="kv-key">Response Size:</span>
+                  <span id="stepSize" class="kv-val font-mono">--</span>
+                </div>
+                <div class="kv-row" id="rowContentType">
+                  <span class="kv-key">Content-Type:</span>
+                  <span id="stepContentType" class="kv-val text-muted">--</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div class="footer-actions">
+          <button id="btnCopyJson" class="btn-secondary" title="Copy raw network metrics as JSON">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Copy JSON
+          </button>
+          <button id="btnOpenFull" class="btn-secondary" title="Open visualizer in full browser tab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+            Full Tab
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- VIEW 2: MULTI-SITE COMPARISON & BENCHMARK -->
+    <main id="compareView" class="view-panel">
+      <!-- Input to add sites -->
+      <div class="compare-add-section">
+        <div class="input-wrapper">
+          <input
+            type="text"
+            id="compareSiteInput"
+            placeholder="Add website (e.g. reddit.com)"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="btnAddSite" class="btn-primary">
+            + Add
+          </button>
+        </div>
+
+        <!-- Preset Comparison Packs -->
+        <div class="preset-packs-row">
+          <span class="chip-label">Presets:</span>
+          <button class="preset-btn" id="presetTech">Tech Giants</button>
+          <button class="preset-btn" id="presetDev">Dev Hubs</button>
+          <button class="preset-btn" id="presetSocial">Social</button>
         </div>
       </div>
 
-      <!-- Flowchart Pipeline -->
-      <div class="flow-pipeline">
-
-        <!-- Step 1: Client Request -->
-        <div class="step-card step-client">
-          <div class="step-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-              <line x1="8" y1="21" x2="16" y2="21"></line>
-              <line x1="12" y1="17" x2="12" y2="21"></line>
-            </svg>
-          </div>
-          <div class="step-content">
-            <div class="step-header">
-              <h3>Client Request</h3>
-              <span class="badge badge-purple" id="clientProtocol">HTTPS</span>
-            </div>
-            <p class="step-detail">Initiated from Chrome browser</p>
-            <p class="step-sub" id="clientTargetUrl">https://github.com</p>
-          </div>
+      <!-- Selected Sites Tags -->
+      <div class="sites-bucket-card">
+        <div class="bucket-header">
+          <span>Sites to Compare (<span id="sitesCount">0</span>):</span>
+          <button id="btnClearAllSites" class="btn-text-danger">Clear All</button>
         </div>
-
-        <div class="flow-arrow">
-          <div class="arrow-line"></div>
-          <div class="arrow-head">↓</div>
+        <div id="sitesTagsContainer" class="sites-tags-container">
+          <!-- Dynamically populated tags with (x) buttons -->
         </div>
-
-        <!-- Step 2: DNS Resolution -->
-        <div class="step-card step-dns">
-          <div class="step-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="2" y1="12" x2="22" y2="12"></line>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-            </svg>
-          </div>
-          <div class="step-content">
-            <div class="step-header">
-              <h3>DNS Lookup</h3>
-              <span id="dnsTimeBadge" class="timing-badge">-- ms</span>
-            </div>
-            <div class="key-value-list">
-              <div class="kv-row">
-                <span class="kv-key">Domain:</span>
-                <span id="stepDomain" class="kv-val">--</span>
-              </div>
-              <div class="kv-row">
-                <span class="kv-key">Resolved IP:</span>
-                <span id="stepIp" class="kv-val ip-val">--</span>
-              </div>
-              <div class="kv-row">
-                <span class="kv-key">Provider:</span>
-                <span id="stepDnsProvider" class="kv-val text-muted">Google DoH</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="flow-arrow">
-          <div class="arrow-line"></div>
-          <div class="arrow-head">↓</div>
-        </div>
-
-        <!-- Step 3: HTTP Request & Response -->
-        <div class="step-card step-http">
-          <div class="step-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-            </svg>
-          </div>
-          <div class="step-content">
-            <div class="step-header">
-              <h3>HTTP Request</h3>
-              <span id="httpTimeBadge" class="timing-badge">-- ms</span>
-            </div>
-            <div class="key-value-list">
-              <div class="kv-row">
-                <span class="kv-key">Method:</span>
-                <span class="kv-val font-mono">GET /</span>
-              </div>
-              <div class="kv-row">
-                <span class="kv-key">Status:</span>
-                <span id="stepStatusCode" class="kv-val status-pill">--</span>
-              </div>
-              <div class="kv-row" id="rowServer">
-                <span class="kv-key">Server:</span>
-                <span id="stepServer" class="kv-val text-muted">--</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="flow-arrow">
-          <div class="arrow-line"></div>
-          <div class="arrow-head">↓</div>
-        </div>
-
-        <!-- Step 4: Request Complete -->
-        <div class="step-card step-complete">
-          <div class="step-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-          </div>
-          <div class="step-content">
-            <div class="step-header">
-              <h3>Request Complete</h3>
-              <span class="badge badge-success">Success</span>
-            </div>
-            <p class="step-detail">Server responded successfully</p>
-            <div class="key-value-list">
-              <div class="kv-row">
-                <span class="kv-key">Response Size:</span>
-                <span id="stepSize" class="kv-val font-mono">--</span>
-              </div>
-              <div class="kv-row" id="rowContentType">
-                <span class="kv-key">Content-Type:</span>
-                <span id="stepContentType" class="kv-val text-muted">--</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
 
-      <!-- Footer Buttons -->
-      <div class="footer-actions">
-        <button id="btnCopyJson" class="btn-secondary" title="Copy raw network metrics as JSON">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      <!-- Action: Run Benchmark -->
+      <div class="compare-action-row">
+        <button id="btnRunBenchmark" class="btn-benchmark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
           </svg>
-          Copy JSON
-        </button>
-        <button id="btnOpenFull" class="btn-secondary" title="Open visualizer in full browser tab">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-            <polyline points="15 3 21 3 21 9"></polyline>
-            <line x1="10" y1="14" x2="21" y2="3"></line>
-          </svg>
-          Full Tab
+          Compare All Sites
         </button>
       </div>
 
-    </div>
+      <!-- Comparison Progress & Loading -->
+      <div id="compareLoadingBox" class="loading-box hidden">
+        <div class="spinner"></div>
+        <div id="compareProgressLabel" class="loading-label">Benchmarking sites...</div>
+        <div class="compare-progress-track">
+          <div id="compareProgressBar" class="compare-progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Comparison Error Box -->
+      <div id="compareErrorBox" class="error-box hidden">
+        <div class="error-icon">⚠️</div>
+        <div id="compareErrorMessage" class="error-text"></div>
+      </div>
+
+      <!-- Comparison Results Dashboard -->
+      <div id="compareResultsContainer" class="compare-results hidden">
+        <!-- Winner Banner -->
+        <div class="winner-banner">
+          <div class="trophy-icon">🏆</div>
+          <div class="winner-info">
+            <div class="winner-title">Fastest Site: <span id="winnerHost" class="winner-name">--</span></div>
+            <div class="winner-sub">Completed request in <strong id="winnerTotalTime">-- ms</strong> (<span id="winnerSpeedDiff">--</span> faster)</div>
+          </div>
+        </div>
+
+        <!-- Quick Summary Stats -->
+        <div class="compare-quick-stats">
+          <div class="stat-pill">
+            <span class="stat-pill-label">⚡ Fastest DNS:</span>
+            <span id="fastestDnsHost" class="stat-pill-val">--</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-pill-label">📦 Lightest Payload:</span>
+            <span id="lightestHost" class="stat-pill-val">--</span>
+          </div>
+        </div>
+
+        <!-- Comparison Bar Chart Card -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Latency Comparison Graph</h3>
+            <div class="sort-wrapper">
+              <label for="sortSelect">Sort:</label>
+              <select id="sortSelect" class="sort-select">
+                <option value="total">Total Time</option>
+                <option value="dns">DNS Lookup</option>
+                <option value="response">HTTP Response</option>
+                <option value="name">Domain Name</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Chart Legend -->
+          <div class="chart-legend">
+            <span class="legend-chip"><span class="dot dot-dns"></span> DNS Time</span>
+            <span class="legend-chip"><span class="dot dot-response"></span> HTTP Response</span>
+          </div>
+
+          <!-- The Bars Graph -->
+          <div id="comparisonBars" class="comparison-bars-list">
+            <!-- Dynamically populated comparison bars -->
+          </div>
+        </div>
+
+        <!-- Comparison Leaderboard Table -->
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Leaderboard Table</h3>
+          </div>
+          <div class="table-wrapper">
+            <table class="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Domain</th>
+                  <th>DNS</th>
+                  <th>Response</th>
+                  <th>Payload</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboardTbody">
+                <!-- Dynamically populated table rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Compare Footer Actions -->
+        <div class="footer-actions">
+          <button id="btnCopyCompareJson" class="btn-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Copy Benchmark JSON
+          </button>
+          <button id="btnOpenFullCompare" class="btn-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+            Full Tab
+          </button>
+        </div>
+      </div>
+    </main>
   </div>
 
   <script src="popup.js"></script>
